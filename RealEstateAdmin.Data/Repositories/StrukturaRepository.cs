@@ -18,8 +18,8 @@ namespace RealEstateAdmin.Data
                             StrukturaID = s.StrukturaID,
                             KategorijaID = s.KategorijaID,
                             Naziv = s.Naziv ?? string.Empty,
-                            Opis = s.Opis ?? string.Empty,
-                            KategorijaNaziv = s.Kategorija != null ? s.Kategorija.Naziv : string.Empty
+                            Opis = s.Opis ?? "",
+                            KategorijaNaziv = s.Kategorija != null ? s.Kategorija.Naziv : ""
                         }).ToList();
             }
         }

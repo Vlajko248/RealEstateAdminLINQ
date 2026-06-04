@@ -16,8 +16,8 @@ namespace RealEstateAdmin.Data
                     .Select(g => new GradDTO
                     {
                         GradID = g.GradID,
-                        Naziv = g.Naziv ?? string.Empty,
-                        PostanskiBroj = g.PostanskiBroj ?? string.Empty
+                        Naziv = g.Naziv ?? "",
+                        PostanskiBroj = g.PostanskiBroj ?? ""
                     })
                     .ToList();
             }

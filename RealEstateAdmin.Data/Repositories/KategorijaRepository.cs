@@ -17,7 +17,7 @@ namespace RealEstateAdmin.Data
                     {
                         KategorijaID = k.KategorijaID,
                         Naziv = k.Naziv ?? string.Empty,
-                        Opis = k.Opis ?? string.Empty
+                        Opis = k.Opis ?? ""
                     })
                     .ToList();
             }
