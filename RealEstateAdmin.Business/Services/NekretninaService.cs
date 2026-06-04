@@ -4,6 +4,7 @@ using System.Linq;
 using RealEstateAdmin.Data;
 using RealEstateAdmin.DTO;
 
+
 namespace RealEstateAdmin.Business
 {
     public class NekretninaService
@@ -14,6 +15,11 @@ namespace RealEstateAdmin.Business
         public List<NekretninaDTO> GetAll()
         {
             return _nekretninaRepository.GetAll();
+        }
+
+        public List<NekretninaCenaViewModel> GetNekretnineCenaLeftJoin()
+        {
+            return _nekretninaRepository.GetNekretnineCenaLeftJoin();
         }
 
         public void Insert(NekretninaDTO nekretnina)

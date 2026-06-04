@@ -14,6 +14,11 @@ namespace RealEstateAdmin.Business
             return _cenaRepository.GetAll();
         }
 
+        public List<CenaDTO> GetByNekretninaId(int nekretninaId)
+        {
+            return _cenaRepository.GetByNekretninaId(nekretninaId);
+        }
+
         public void Insert(CenaDTO cena)
         {
             ValidateCena(cena);

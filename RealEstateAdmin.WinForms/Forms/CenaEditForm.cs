@@ -66,7 +66,7 @@ namespace RealEstateAdmin.WinForms
 
                 var nekretninaId = (int)cmbNekretnina.SelectedValue;
 
-                if (_cena == null)
+                if (_cena == null || _cena.CenaID == 0)
                 {
                     var cena = new CenaDTO
                     {

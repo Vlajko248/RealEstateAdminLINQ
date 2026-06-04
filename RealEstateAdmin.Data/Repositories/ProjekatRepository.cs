@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
+using System.Linq;
 using RealEstateAdmin.DTO;
 
 namespace RealEstateAdmin.Data
@@ -10,33 +9,20 @@ namespace RealEstateAdmin.Data
     {
         public List<ProjekatDTO> GetAll()
         {
-            var projekti = new List<ProjekatDTO>();
-
-            using (var connection = DbHelper.GetConnection())
-            using (var command = new SqlCommand("SELECT p.ProjekatID, p.Naziv, p.Adresa, p.GradID, p.Opis, g.Naziv AS GradNaziv FROM Projekat p LEFT JOIN Grad g ON p.GradID = g.GradID ORDER BY p.Naziv", connection))
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        var projekat = new ProjekatDTO
+                return (from p in ctx.Projekti
+                        orderby p.Naziv
+                        select new ProjekatDTO
                         {
-                            ProjekatID = reader.GetInt32(0),
-                            Naziv = reader.GetString(1),
-                            Adresa = reader.GetString(2),
-                            GradID = reader.GetInt32(3),
-                            Opis = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
-                            GradNaziv = reader.IsDBNull(5) ? string.Empty : reader.GetString(5)
-                        };
-
-                        projekti.Add(projekat);
-                    }
-                }
+                            ProjekatID = p.ProjekatID,
+                            Naziv = p.Naziv ?? string.Empty,
+                            Adresa = p.Adresa ?? string.Empty,
+                            GradID = p.GradID,
+                            Opis = p.Opis ?? string.Empty,
+                            GradNaziv = p.Grad != null ? p.Grad.Naziv : string.Empty
+                        }).ToList();
             }
-
-            return projekti;
         }
 
         public void Insert(ProjekatDTO projekat)
@@ -46,30 +32,13 @@ namespace RealEstateAdmin.Data
                 throw new ArgumentNullException(nameof(projekat));
             }
 
-            using (var connection = DbHelper.GetConnection())
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var transaction = connection.BeginTransaction())
-                using (var command = new SqlCommand("sp_Projekat_Insert", connection, transaction))
-                {
-                    try
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@Naziv", projekat.Naziv ?? string.Empty);
-                        command.Parameters.AddWithValue("@Adresa", projekat.Adresa ?? string.Empty);
-                        command.Parameters.AddWithValue("@GradID", projekat.GradID);
-                        command.Parameters.AddWithValue("@Opis", projekat.Opis ?? string.Empty);
-
-                        command.ExecuteNonQuery();
-                        transaction.Commit();
-                    }
-                    catch
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
+                ctx.sp_Projekat_Insert(
+                    projekat.Naziv ?? string.Empty,
+                    projekat.Adresa ?? string.Empty,
+                    projekat.GradID,
+                    projekat.Opis ?? string.Empty);
             }
         }
 
@@ -80,57 +49,22 @@ namespace RealEstateAdmin.Data
                 throw new ArgumentNullException(nameof(projekat));
             }
 
-            using (var connection = DbHelper.GetConnection())
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var transaction = connection.BeginTransaction())
-                using (var command = new SqlCommand("sp_Projekat_Update", connection, transaction))
-                {
-                    try
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@ProjekatID", projekat.ProjekatID);
-                        command.Parameters.AddWithValue("@Naziv", projekat.Naziv ?? string.Empty);
-                        command.Parameters.AddWithValue("@Adresa", projekat.Adresa ?? string.Empty);
-                        command.Parameters.AddWithValue("@GradID", projekat.GradID);
-                        command.Parameters.AddWithValue("@Opis", projekat.Opis ?? string.Empty);
-
-                        command.ExecuteNonQuery();
-                        transaction.Commit();
-                    }
-                    catch
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
+                ctx.sp_Projekat_Update(
+                    projekat.ProjekatID,
+                    projekat.Naziv ?? string.Empty,
+                    projekat.Adresa ?? string.Empty,
+                    projekat.GradID,
+                    projekat.Opis ?? string.Empty);
             }
         }
 
         public void Delete(int projekatId)
         {
-            using (var connection = DbHelper.GetConnection())
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var transaction = connection.BeginTransaction())
-                using (var command = new SqlCommand("sp_Projekat_Delete", connection, transaction))
-                {
-                    try
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@ProjekatID", projekatId);
-
-                        command.ExecuteNonQuery();
-                        transaction.Commit();
-                    }
-                    catch
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
+                ctx.sp_Projekat_Delete(projekatId);
             }
         }
     }

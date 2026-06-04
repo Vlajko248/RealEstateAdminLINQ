@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
+using System.Linq;
 using RealEstateAdmin.DTO;
 
 namespace RealEstateAdmin.Data
@@ -10,34 +9,42 @@ namespace RealEstateAdmin.Data
     {
         public List<CenaDTO> GetAll()
         {
-            var cene = new List<CenaDTO>();
-
-            using (var connection = DbHelper.GetConnection())
-            using (var command = new SqlCommand("SELECT c.CenaID, c.NekretninaID, c.Iznos, c.DatumOd, c.DatumDo, c.Aktivna, n.Naziv AS NekretninaNaziv FROM Cena c LEFT JOIN Nekretnina n ON c.NekretninaID = n.NekretninaID ORDER BY c.DatumOd DESC", connection))
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        var cena = new CenaDTO
+                return (from c in ctx.Cene
+                        orderby c.DatumOd descending
+                        select new CenaDTO
                         {
-                            CenaID = reader.GetInt32(0),
-                            NekretninaID = reader.GetInt32(1),
-                            Iznos = reader.GetDecimal(2),
-                            DatumOd = reader.GetDateTime(3),
-                            DatumDo = reader.GetDateTime(4),
-                            Aktivna = reader.GetBoolean(5),
-                            NekretninaNaziv = reader.IsDBNull(6) ? string.Empty : reader.GetString(6)
-                        };
-
-                        cene.Add(cena);
-                    }
-                }
+                            CenaID = c.CenaID,
+                            NekretninaID = c.NekretninaID,
+                            Iznos = c.Iznos,
+                            DatumOd = c.DatumOd,
+                            DatumDo = c.DatumDo,
+                            Aktivna = c.Aktivna,
+                            NekretninaNaziv = c.Nekretnina != null ? c.Nekretnina.Naziv : string.Empty
+                        }).ToList();
             }
+        }
 
-            return cene;
+        public List<CenaDTO> GetByNekretninaId(int nekretninaId)
+        {
+            using (var ctx = new RealEstateDBDataContext())
+            {
+                return ctx.Cene
+                    .Where(c => c.NekretninaID == nekretninaId)
+                    .OrderByDescending(c => c.DatumOd)
+                    .Select(c => new CenaDTO
+                    {
+                        CenaID = c.CenaID,
+                        NekretninaID = c.NekretninaID,
+                        Iznos = c.Iznos,
+                        DatumOd = c.DatumOd,
+                        DatumDo = c.DatumDo,
+                        Aktivna = c.Aktivna,
+                        NekretninaNaziv = c.Nekretnina != null ? c.Nekretnina.Naziv : string.Empty
+                    })
+                    .ToList();
+            }
         }
 
         public void Insert(CenaDTO cena)
@@ -47,31 +54,9 @@ namespace RealEstateAdmin.Data
                 throw new ArgumentNullException(nameof(cena));
             }
 
-            using (var connection = DbHelper.GetConnection())
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var transaction = connection.BeginTransaction())
-                using (var command = new SqlCommand("sp_Cena_Insert", connection, transaction))
-                {
-                    try
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@NekretninaID", cena.NekretninaID);
-                        command.Parameters.AddWithValue("@Iznos", cena.Iznos);
-                        command.Parameters.AddWithValue("@DatumOd", cena.DatumOd);
-                        command.Parameters.AddWithValue("@DatumDo", cena.DatumDo);
-                        command.Parameters.AddWithValue("@Aktivna", cena.Aktivna);
-
-                        command.ExecuteNonQuery();
-                        transaction.Commit();
-                    }
-                    catch
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
+                ctx.sp_Cena_Insert(cena.NekretninaID, cena.Iznos, cena.DatumOd, cena.DatumDo, cena.Aktivna);
             }
         }
 
@@ -82,58 +67,17 @@ namespace RealEstateAdmin.Data
                 throw new ArgumentNullException(nameof(cena));
             }
 
-            using (var connection = DbHelper.GetConnection())
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var transaction = connection.BeginTransaction())
-                using (var command = new SqlCommand("sp_Cena_Update", connection, transaction))
-                {
-                    try
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@CenaID", cena.CenaID);
-                        command.Parameters.AddWithValue("@NekretninaID", cena.NekretninaID);
-                        command.Parameters.AddWithValue("@Iznos", cena.Iznos);
-                        command.Parameters.AddWithValue("@DatumOd", cena.DatumOd);
-                        command.Parameters.AddWithValue("@DatumDo", cena.DatumDo);
-                        command.Parameters.AddWithValue("@Aktivna", cena.Aktivna);
-
-                        command.ExecuteNonQuery();
-                        transaction.Commit();
-                    }
-                    catch
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
+                ctx.sp_Cena_Update(cena.CenaID, cena.NekretninaID, cena.Iznos, cena.DatumOd, cena.DatumDo, cena.Aktivna);
             }
         }
 
         public void Delete(int cenaId)
         {
-            using (var connection = DbHelper.GetConnection())
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var transaction = connection.BeginTransaction())
-                using (var command = new SqlCommand("sp_Cena_Delete", connection, transaction))
-                {
-                    try
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@CenaID", cenaId);
-
-                        command.ExecuteNonQuery();
-                        transaction.Commit();
-                    }
-                    catch
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
+                ctx.sp_Cena_Delete(cenaId);
             }
         }
     }

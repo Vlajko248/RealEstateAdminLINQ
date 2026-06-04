@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
+using System.Linq;
 using RealEstateAdmin.DTO;
 
 namespace RealEstateAdmin.Data
@@ -10,30 +9,18 @@ namespace RealEstateAdmin.Data
     {
         public List<KategorijaDTO> GetAll()
         {
-            var kategorije = new List<KategorijaDTO>();
-
-            using (var connection = DbHelper.GetConnection())
-            using (var command = new SqlCommand("SELECT KategorijaID, Naziv, Opis FROM Kategorija ORDER BY Naziv", connection))
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
+                return ctx.Kategorije
+                    .OrderBy(k => k.Naziv)
+                    .Select(k => new KategorijaDTO
                     {
-                        var kategorija = new KategorijaDTO
-                        {
-                            KategorijaID = reader.GetInt32(0),
-                            Naziv = reader.GetString(1),
-                            Opis = reader.IsDBNull(2) ? string.Empty : reader.GetString(2)
-                        };
-
-                        kategorije.Add(kategorija);
-                    }
-                }
+                        KategorijaID = k.KategorijaID,
+                        Naziv = k.Naziv ?? string.Empty,
+                        Opis = k.Opis ?? string.Empty
+                    })
+                    .ToList();
             }
-
-            return kategorije;
         }
 
         public void Insert(KategorijaDTO kategorija)
@@ -43,28 +30,9 @@ namespace RealEstateAdmin.Data
                 throw new ArgumentNullException(nameof(kategorija));
             }
 
-            using (var connection = DbHelper.GetConnection())
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var transaction = connection.BeginTransaction())
-                using (var command = new SqlCommand("sp_Kategorija_Insert", connection, transaction))
-                {
-                    try
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@Naziv", kategorija.Naziv ?? string.Empty);
-                        command.Parameters.AddWithValue("@Opis", kategorija.Opis ?? string.Empty);
-
-                        command.ExecuteNonQuery();
-                        transaction.Commit();
-                    }
-                    catch
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
+                ctx.sp_Kategorija_Insert(kategorija.Naziv ?? string.Empty, kategorija.Opis ?? string.Empty);
             }
         }
 
@@ -75,55 +43,17 @@ namespace RealEstateAdmin.Data
                 throw new ArgumentNullException(nameof(kategorija));
             }
 
-            using (var connection = DbHelper.GetConnection())
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var transaction = connection.BeginTransaction())
-                using (var command = new SqlCommand("sp_Kategorija_Update", connection, transaction))
-                {
-                    try
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@KategorijaID", kategorija.KategorijaID);
-                        command.Parameters.AddWithValue("@Naziv", kategorija.Naziv ?? string.Empty);
-                        command.Parameters.AddWithValue("@Opis", kategorija.Opis ?? string.Empty);
-
-                        command.ExecuteNonQuery();
-                        transaction.Commit();
-                    }
-                    catch
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
+                ctx.sp_Kategorija_Update(kategorija.KategorijaID, kategorija.Naziv ?? string.Empty, kategorija.Opis ?? string.Empty);
             }
         }
 
         public void Delete(int kategorijaId)
         {
-            using (var connection = DbHelper.GetConnection())
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var transaction = connection.BeginTransaction())
-                using (var command = new SqlCommand("sp_Kategorija_Delete", connection, transaction))
-                {
-                    try
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@KategorijaID", kategorijaId);
-
-                        command.ExecuteNonQuery();
-                        transaction.Commit();
-                    }
-                    catch
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
+                ctx.sp_Kategorija_Delete(kategorijaId);
             }
         }
     }

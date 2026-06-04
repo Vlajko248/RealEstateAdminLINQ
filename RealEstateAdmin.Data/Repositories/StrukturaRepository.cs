@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
+using System.Linq;
 using RealEstateAdmin.DTO;
 
 namespace RealEstateAdmin.Data
@@ -10,32 +9,19 @@ namespace RealEstateAdmin.Data
     {
         public List<StrukturaDTO> GetAll()
         {
-            var strukture = new List<StrukturaDTO>();
-
-            using (var connection = DbHelper.GetConnection())
-            using (var command = new SqlCommand("SELECT s.StrukturaID, s.KategorijaID, s.Naziv, s.Opis, k.Naziv AS KategorijaNaziv FROM Struktura s LEFT JOIN Kategorija k ON s.KategorijaID = k.KategorijaID ORDER BY s.Naziv", connection))
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        var struktura = new StrukturaDTO
+                return (from s in ctx.Strukture
+                        orderby s.Naziv
+                        select new StrukturaDTO
                         {
-                            StrukturaID = reader.GetInt32(0),
-                            KategorijaID = reader.GetInt32(1),
-                            Naziv = reader.GetString(2),
-                            Opis = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
-                            KategorijaNaziv = reader.IsDBNull(4) ? string.Empty : reader.GetString(4)
-                        };
-
-                        strukture.Add(struktura);
-                    }
-                }
+                            StrukturaID = s.StrukturaID,
+                            KategorijaID = s.KategorijaID,
+                            Naziv = s.Naziv ?? string.Empty,
+                            Opis = s.Opis ?? string.Empty,
+                            KategorijaNaziv = s.Kategorija != null ? s.Kategorija.Naziv : string.Empty
+                        }).ToList();
             }
-
-            return strukture;
         }
 
         public void Insert(StrukturaDTO struktura)
@@ -45,29 +31,12 @@ namespace RealEstateAdmin.Data
                 throw new ArgumentNullException(nameof(struktura));
             }
 
-            using (var connection = DbHelper.GetConnection())
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var transaction = connection.BeginTransaction())
-                using (var command = new SqlCommand("sp_Struktura_Insert", connection, transaction))
-                {
-                    try
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@KategorijaID", struktura.KategorijaID);
-                        command.Parameters.AddWithValue("@Naziv", struktura.Naziv ?? string.Empty);
-                        command.Parameters.AddWithValue("@Opis", struktura.Opis ?? string.Empty);
-
-                        command.ExecuteNonQuery();
-                        transaction.Commit();
-                    }
-                    catch
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
+                ctx.sp_Struktura_Insert(
+                    struktura.KategorijaID,
+                    struktura.Naziv ?? string.Empty,
+                    struktura.Opis ?? string.Empty);
             }
         }
 
@@ -78,56 +47,21 @@ namespace RealEstateAdmin.Data
                 throw new ArgumentNullException(nameof(struktura));
             }
 
-            using (var connection = DbHelper.GetConnection())
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var transaction = connection.BeginTransaction())
-                using (var command = new SqlCommand("sp_Struktura_Update", connection, transaction))
-                {
-                    try
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@StrukturaID", struktura.StrukturaID);
-                        command.Parameters.AddWithValue("@KategorijaID", struktura.KategorijaID);
-                        command.Parameters.AddWithValue("@Naziv", struktura.Naziv ?? string.Empty);
-                        command.Parameters.AddWithValue("@Opis", struktura.Opis ?? string.Empty);
-
-                        command.ExecuteNonQuery();
-                        transaction.Commit();
-                    }
-                    catch
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
+                ctx.sp_Struktura_Update(
+                    struktura.StrukturaID,
+                    struktura.KategorijaID,
+                    struktura.Naziv ?? string.Empty,
+                    struktura.Opis ?? string.Empty);
             }
         }
 
         public void Delete(int strukturaId)
         {
-            using (var connection = DbHelper.GetConnection())
+            using (var ctx = new RealEstateDBDataContext())
             {
-                connection.Open();
-
-                using (var transaction = connection.BeginTransaction())
-                using (var command = new SqlCommand("sp_Struktura_Delete", connection, transaction))
-                {
-                    try
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@StrukturaID", strukturaId);
-
-                        command.ExecuteNonQuery();
-                        transaction.Commit();
-                    }
-                    catch
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
+                ctx.sp_Struktura_Delete(strukturaId);
             }
         }
     }

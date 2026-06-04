@@ -45,6 +45,7 @@
     <Compile Include="Models\GradDTO.cs" />
     <Compile Include="Models\KategorijaDTO.cs" />
     <Compile Include="Models\NekretninaDTO.cs" />
+    <Compile Include="Models\NekretninaCenaViewModel.cs" />
     <Compile Include="Models\ProjekatDTO.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Models\StrukturaDTO.cs" />
