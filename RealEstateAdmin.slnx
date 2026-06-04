@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="RealEstateAdmin.Business/RealEstateAdmin.Business.csproj" Id="c159e095-707c-4c0e-9c74-222399fb4c4e" />
+  <Project Path="RealEstateAdmin.Data/RealEstateAdmin.Data.csproj" />
+  <Project Path="RealEstateAdmin.DTO/RealEstateAdmin.DTO.csproj" Id="6a8f03cf-a74f-4f16-96aa-468353b44c28" />
+  <Project Path="RealEstateAdmin.WinForms/RealEstateAdmin.WinForms.csproj" Id="3cdedeac-1334-491f-93fc-9b737fd79145" />
+</Solution>
